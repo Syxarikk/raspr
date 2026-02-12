@@ -1,23 +1,11 @@
-# Flutter
-build/
-.flutter-plugins
-.flutter-plugins-dependencies
-.dart_tool/
-.packages
-.pub/
-.ephemeral/
-
-# Linux
-linux/flutter/ephemeral/
-
-# Windows
-windows/flutter/ephemeral/
-
-# IDE
-.idea/
-.vscode/
-
-# Logs
-*.log
-.pids/
-.claude/
+node_modules
+.env
+__pycache__
+*.pyc
+uploads
+apps/api/uploads
+apps/api/.venv
+apps/admin/dist
+apps/miniapp/dist
+.coverage
+.pytest_cache
