@@ -1,0 +1,14 @@
+{
+  "name": "adcontrol-cross-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cross-platform AdControl app (Web + mobile/desktop wrappers)",
+  "scripts": {
+    "start": "python3 -m http.server 4173",
+    "start:frontend": "python3 -m http.server 4173 --directory ./frontend",
+    "check": "python3 -m py_compile frontend/*.py 2>/dev/null || true"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
