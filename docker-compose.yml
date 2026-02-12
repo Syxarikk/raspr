@@ -1,0 +1,44 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: adcontrol
+      POSTGRES_USER: adcontrol
+      POSTGRES_PASSWORD: adcontrol
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  api:
+    build: ./apps/api
+    environment:
+      DATABASE_URL: postgresql+psycopg2://adcontrol:adcontrol@db:5432/adcontrol
+      SECRET_KEY: dev-secret
+    volumes:
+      - ./apps/api/uploads:/app/uploads
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+
+  admin:
+    build: ./apps/admin
+    environment:
+      VITE_API_URL: http://localhost:8000
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+
+  miniapp:
+    build: ./apps/miniapp
+    environment:
+      VITE_API_URL: http://localhost:8000
+    ports:
+      - "5174:5174"
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
