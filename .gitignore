@@ -1,0 +1,23 @@
+# Flutter
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.dart_tool/
+.packages
+.pub/
+.ephemeral/
+
+# Linux
+linux/flutter/ephemeral/
+
+# Windows
+windows/flutter/ephemeral/
+
+# IDE
+.idea/
+.vscode/
+
+# Logs
+*.log
+.pids/
+.claude/
