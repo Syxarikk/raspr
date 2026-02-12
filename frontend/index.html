@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AdControl</title>
+    <meta name="theme-color" content="#1f6fff" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div id="app" class="app-shell">
+      <aside class="sidebar desktop-only">
+        <div class="brand">
+          <div class="logo">M</div>
+          <div>
+            <p class="muted">AdControl</p>
+            <h2>Mknet Podolsk</h2>
+          </div>
+        </div>
+        <nav class="menu" id="desktopMenu"></nav>
+        <div class="profile-card">
+          <div class="avatar"></div>
+          <div>
+            <strong>Ivan P.</strong>
+            <p class="muted">Marketing Manager</p>
+          </div>
+        </div>
+      </aside>
+
+      <main class="content">
+        <header class="topbar">
+          <button id="backBtn" class="ghost mobile-only">←</button>
+          <h1 id="title">Наряды</h1>
+          <button class="primary">+ Создать</button>
+        </header>
+        <section id="screen"></section>
+      </main>
+    </div>
+
+    <nav class="mobile-tabs" id="mobileMenu"></nav>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
