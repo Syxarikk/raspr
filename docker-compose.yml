@@ -17,25 +17,20 @@ services:
       SECRET_KEY: dev-secret
     volumes:
       - ./apps/api/uploads:/app/uploads
-    ports:
-      - "51555:8000"
-    depends_on:
+
       - db
 
   admin:
     build: ./apps/admin
     environment:
-      VITE_API_URL: http://176.106.144.117:51555
-    ports:
+
       - "5173:5173"
     depends_on:
       - api
 
   miniapp:
     build: ./apps/miniapp
-    environment:
-      VITE_API_URL: http://176.106.144.117:51555
-    ports:
+
       - "5174:5174"
     depends_on:
       - api
