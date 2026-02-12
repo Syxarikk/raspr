@@ -55,10 +55,13 @@ MVP-сервис учета расклейки наружной рекламы: 
 docker compose up --build
 ```
 
+ codex/create-mvp-for-adcontrol-web-service-zzf1po
 Сервисы:
 - API: http://176.106.144.117:51555 (Swagger: `/docs`)
 - Admin: http://176.106.144.117:5173
 - Mini App: http://176.106.144.117:5174
+=======
+ main
 
 ### Demo users
 - operator: `operator / operator123`
@@ -92,6 +95,7 @@ docker compose up --build
 2. Включить WebApp URL на фронт miniapp.
 3. Передавать `initData` в miniapp (в MVP временно mock через telegram_id).
 4. В проде: добавить серверную валидацию `initData` по токену бота.
+codex/create-mvp-for-adcontrol-web-service-zzf1po
 
 
 ## Troubleshooting docker compose
@@ -110,3 +114,5 @@ git pull
 docker compose up --build
 ```
 
+=======
+ main

@@ -11,13 +11,18 @@ services:
       - pgdata:/var/lib/postgresql/data
 
   api:
+ codex/create-mvp-for-adcontrol-web-service-zzf1po
     build:
       context: ./apps/api
+=======
+    build: ./apps/api
+main
     environment:
       DATABASE_URL: postgresql+psycopg2://adcontrol:adcontrol@db:5432/adcontrol
       SECRET_KEY: dev-secret
     volumes:
       - ./apps/api/uploads:/app/uploads
+codex/create-mvp-for-adcontrol-web-service-zzf1po
     ports:
       - "51555:8000"
     depends_on:
@@ -29,16 +34,30 @@ services:
     environment:
       VITE_API_URL: http://176.106.144.117:51555
     ports:
+=======
+
+      - db
+
+  admin:
+    build: ./apps/admin
+    environment:
+
+main
       - "5173:5173"
     depends_on:
       - api
 
   miniapp:
+codex/create-mvp-for-adcontrol-web-service-zzf1po
     build:
       context: ./apps/miniapp
     environment:
       VITE_API_URL: http://176.106.144.117:51555
     ports:
+=======
+    build: ./apps/miniapp
+
+ main
       - "5174:5174"
     depends_on:
       - api

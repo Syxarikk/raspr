@@ -14,8 +14,11 @@ import {
 } from '@mui/material';
 import axios from 'axios';
 
+ codex/create-mvp-for-adcontrol-web-service-zzf1po
 const api = axios.create({ baseURL: import.meta.env.VITE_API_URL || 'http://176.106.144.117:51555' });
 
+=======
+ main
 function AdminApp() {
   const [token, setToken] = useState(localStorage.getItem('token') || '');
   const [tab, setTab] = useState(0);
