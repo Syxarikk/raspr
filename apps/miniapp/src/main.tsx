@@ -2,8 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import axios from 'axios';
 
-const api = axios.create({ baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000' });
-
 function App() {
   const [token, setToken] = useState(localStorage.getItem('mini_token') || '');
   const [tab, setTab] = useState<'orders'|'payouts'|'profile'>('orders');

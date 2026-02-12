@@ -55,10 +55,6 @@ MVP-сервис учета расклейки наружной рекламы: 
 docker compose up --build
 ```
 
-Сервисы:
-- API: http://localhost:8000 (Swagger: `/docs`)
-- Admin: http://localhost:5173
-- Mini App: http://localhost:5174
 
 ### Demo users
 - operator: `operator / operator123`
