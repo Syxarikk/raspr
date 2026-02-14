@@ -17,8 +17,8 @@ def run_seed():
     db.add(ws)
     db.flush()
 
-    operator = User(workspace_id=ws.id, role=Role.operator, full_name='Operator Demo', username='operator', phone='+79990000001', password_hash=get_password_hash('operator123'))
-    promoter = User(workspace_id=ws.id, role=Role.promoter, full_name='Promoter Demo', username='promoter', phone='+79990000002', telegram_id=123456789, password_hash=get_password_hash('promoter123'))
+    operator = User(workspace_id=ws.id, role=Role.operator, full_name='Operator Demo', username='operator', phone='+79990000001', password_hash=get_password_hash('1234'))
+    promoter = User(workspace_id=ws.id, role=Role.promoter, full_name='Promoter Demo', username='promoter', phone='+79990000002', telegram_id=123456789, password_hash=get_password_hash('1234'))
     db.add_all([operator, promoter])
     db.flush()
 
