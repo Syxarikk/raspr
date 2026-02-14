@@ -82,3 +82,14 @@ def set_status(order_id: int, payload: OrderStatusIn, db: Session = Depends(get_
     recalc_payout_for_order(db, order)
     db.commit()
     return {'ok': True, 'status': order.status}
+
+
+@router.delete('/{order_id}', response_model=dict)
+def delete_order(order_id: int, db: Session = Depends(get_db), user=Depends(require_role(Role.operator))):
+    order = db.get(Order, order_id)
+    if not order or order.workspace_id != user.workspace_id:
+        raise HTTPException(status_code=404, detail='Not found')
+
+    db.delete(order)
+    db.commit()
+    return {'ok': True}

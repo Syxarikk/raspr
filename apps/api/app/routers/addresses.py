@@ -1,6 +1,6 @@
 import csv
 import io
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 from ..auth import get_current_user, require_role
@@ -43,3 +43,28 @@ def import_csv(file: UploadFile = File(...), db: Session = Depends(get_db), user
         count += 1
     db.commit()
     return {'imported': count}
+
+
+@router.patch('/{address_id}', response_model=AddressOut)
+def update_address(address_id: int, payload: AddressIn, db: Session = Depends(get_db), user=Depends(require_role(Role.operator))):
+    address = db.get(Address, address_id)
+    if not address or address.workspace_id != user.workspace_id:
+        raise HTTPException(status_code=404, detail='Address not found')
+
+    for key, value in payload.model_dump().items():
+        setattr(address, key, value)
+
+    db.commit()
+    db.refresh(address)
+    return address
+
+
+@router.delete('/{address_id}', response_model=dict)
+def delete_address(address_id: int, db: Session = Depends(get_db), user=Depends(require_role(Role.operator))):
+    address = db.get(Address, address_id)
+    if not address or address.workspace_id != user.workspace_id:
+        raise HTTPException(status_code=404, detail='Address not found')
+
+    db.delete(address)
+    db.commit()
+    return {'ok': True}

@@ -698,11 +698,13 @@ function AddressesView({
   mapMarkers,
   onCreateAddress,
   onImportCsv,
+  onDeleteAddress,
 }: {
   addresses: ApiAddress[];
   mapMarkers: Marker[];
   onCreateAddress: (payload: AddressCreatePayload) => Promise<void>;
   onImportCsv: (file: File) => Promise<number>;
+  onDeleteAddress: (addressId: number) => Promise<void>;
 }): React.JSX.Element {
   const [query, setQuery] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
@@ -859,8 +861,20 @@ function AddressesView({
 
                 <div className="chip-row">
                   {group.addresses.slice(0, 16).map((address) => (
-                    <span key={address.id} className="mini-chip">
+                    <span key={address.id} className="mini-chip" style={{position: 'relative', paddingRight: 28}}>
                       {address.building}
+                      <button
+                        className="icon-btn"
+                        type="button"
+                        style={{position: 'absolute', right: 2, top: '50%', transform: 'translateY(-50%)', padding: 2, minWidth: 20, height: 20}}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void onDeleteAddress(address.id);
+                        }}
+                        title="Удалить адрес"
+                      >
+                        <DeleteOutlineRounded fontSize="inherit" style={{fontSize: 14}} />
+                      </button>
                     </span>
                   ))}
                 </div>
@@ -947,6 +961,7 @@ function OrdersView({
   onCreateOrder,
   onSetStatus,
   onReviewPhoto,
+  onDeleteOrder,
   mapMarkers,
 }: {
   orders: ApiOrder[];
@@ -962,6 +977,7 @@ function OrdersView({
   onCreateOrder: (payload: OrderCreatePayload) => Promise<number>;
   onSetStatus: (orderId: number, status: OrderStatus) => Promise<void>;
   onReviewPhoto: (photoId: number, status: PhotoReviewStatus, reason?: string) => Promise<void>;
+  onDeleteOrder: (orderId: number) => Promise<void>;
   mapMarkers: Marker[];
 }): React.JSX.Element {
   const [query, setQuery] = useState('');
@@ -1189,6 +1205,16 @@ function OrdersView({
           <h2>{selectedOrder ? `#${selectedOrder.id}` : 'Наряд'}</h2>
           <div className="header-actions">
             <span className={`status-pill ${statusClass(selectedOrder?.status || 'Draft')}`}>{statusLabel(selectedOrder?.status || 'Draft')}</span>
+            {selectedOrder && (
+              <button
+                className="icon-btn"
+                type="button"
+                onClick={() => void onDeleteOrder(selectedOrder.id)}
+                title="Удалить наряд"
+              >
+                <DeleteOutlineRounded fontSize="small" />
+              </button>
+            )}
             <button className="icon-btn" type="button"><CloseRounded fontSize="small" /></button>
           </div>
         </div>
@@ -1579,9 +1605,11 @@ function EmployeesView({
 function TypesView({
   workTypes,
   onCreateWorkType,
+  onDeleteWorkType,
 }: {
   workTypes: ApiWorkType[];
   onCreateWorkType: (payload: WorkTypeCreatePayload) => Promise<void>;
+  onDeleteWorkType: (workTypeId: number) => Promise<void>;
 }): React.JSX.Element {
   const [name, setName] = useState('');
   const [price, setPrice] = useState('10');
@@ -1641,7 +1669,16 @@ function TypesView({
 
       <div className="types-grid">
         {workTypes.map((workType, index) => (
-          <article key={workType.id} className="card type-card reveal" style={{ animationDelay: `${index * 40}ms` }}>
+          <article key={workType.id} className="card type-card reveal" style={{ animationDelay: `${index * 40}ms`, position: 'relative' }}>
+            <button
+              className="icon-btn"
+              type="button"
+              style={{ position: 'absolute', top: 8, right: 8 }}
+              onClick={() => void onDeleteWorkType(workType.id)}
+              title="Удалить тип работы"
+            >
+              <DeleteOutlineRounded fontSize="small" />
+            </button>
             <h3>{workType.name}</h3>
             <strong>{formatMoney(Number(workType.price_per_unit))} ₽</strong>
             <span className={`status-pill ${workType.is_active ? 'is-progress' : 'is-draft'}`}>
@@ -1960,6 +1997,55 @@ function AdminApp(): React.JSX.Element {
     [headers, loadData, pushNotice],
   );
 
+  const deleteAddress = useCallback(
+    async (addressId: number) => {
+      if (!window.confirm('Удалить этот адрес?')) {
+        return;
+      }
+      try {
+        await api.delete(`/addresses/${addressId}`, { headers });
+        pushNotice('ok', 'Адрес удалён.');
+        await loadData(true);
+      } catch (error: unknown) {
+        pushNotice('error', getErrorMessage(error, 'Не удалось удалить адрес.'));
+      }
+    },
+    [headers, loadData, pushNotice],
+  );
+
+  const deleteOrder = useCallback(
+    async (orderId: number) => {
+      if (!window.confirm('Удалить этот наряд? Это действие необратимо.')) {
+        return;
+      }
+      try {
+        await api.delete(`/orders/${orderId}`, { headers });
+        pushNotice('ok', 'Наряд удалён.');
+        setSelectedOrderId(null);
+        await loadData(true);
+      } catch (error: unknown) {
+        pushNotice('error', getErrorMessage(error, 'Не удалось удалить наряд.'));
+      }
+    },
+    [headers, loadData, pushNotice],
+  );
+
+  const deleteWorkType = useCallback(
+    async (workTypeId: number) => {
+      if (!window.confirm('Удалить этот тип работы?')) {
+        return;
+      }
+      try {
+        await api.delete(`/work-types/${workTypeId}`, { headers });
+        pushNotice('ok', 'Тип работы удалён.');
+        await loadData(true);
+      } catch (error: unknown) {
+        pushNotice('error', getErrorMessage(error, 'Не удалось удалить тип работы.'));
+      }
+    },
+    [headers, loadData, pushNotice],
+  );
+
   const mapMarkers = useMemo<Marker[]>(() => {
     const addressWithCoords = addresses.filter(
       (address) =>
@@ -2030,6 +2116,7 @@ function AdminApp(): React.JSX.Element {
               mapMarkers={mapMarkers}
               onCreateAddress={createAddress}
               onImportCsv={importCsv}
+              onDeleteAddress={deleteAddress}
             />
           ) : null}
 
@@ -2048,6 +2135,7 @@ function AdminApp(): React.JSX.Element {
               onCreateOrder={createOrder}
               onSetStatus={setOrderStatus}
               onReviewPhoto={reviewPhoto}
+              onDeleteOrder={deleteOrder}
               mapMarkers={mapMarkers}
             />
           ) : null}
@@ -2064,7 +2152,7 @@ function AdminApp(): React.JSX.Element {
             />
           ) : null}
 
-          {menu === 'types' ? <TypesView workTypes={workTypes} onCreateWorkType={createWorkType} /> : null}
+          {menu === 'types' ? <TypesView workTypes={workTypes} onCreateWorkType={createWorkType} onDeleteWorkType={deleteWorkType} /> : null}
           {menu === 'guides' ? <GuidesView /> : null}
         </main>
       </div>
