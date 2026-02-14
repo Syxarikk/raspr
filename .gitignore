@@ -9,3 +9,4 @@ apps/admin/dist
 apps/miniapp/dist
 .coverage
 .pytest_cache
+.claude/
