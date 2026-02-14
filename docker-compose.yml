@@ -7,6 +7,12 @@ services:
       POSTGRES_PASSWORD: adcontrol
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U adcontrol"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 
   api:
     build: ./apps/api
@@ -18,7 +24,9 @@ services:
     ports:
       - "0.0.0.0:41111:8000"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    restart: unless-stopped
 
   admin:
     build: ./apps/admin
@@ -28,6 +36,7 @@ services:
       - "0.0.0.0:41112:5173"
     depends_on:
       - api
+    restart: unless-stopped
 
   miniapp:
     build: ./apps/miniapp
@@ -37,6 +46,7 @@ services:
       - "0.0.0.0:41113:5174"
     depends_on:
       - api
+    restart: unless-stopped
 
 volumes:
   pgdata:
