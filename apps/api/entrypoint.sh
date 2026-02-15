@@ -1,5 +1,10 @@
 #!/usr/bin/env sh
-set -euo pipefail
+set -eu
+
+# `pipefail` is not supported by all /bin/sh implementations (e.g. dash).
+if (set -o pipefail 2>/dev/null); then
+  set -o pipefail
+fi
 
 if [ "${RUN_MIGRATIONS:-true}" = "true" ]; then
   alembic upgrade head
