@@ -1,5 +1,14 @@
-const CACHE = 'adcontrol-v1';
-const ASSETS = ['./', './index.html', './styles.css', './app.js', './manifest.webmanifest', './pwa-icon.svg'];
+const CACHE = 'adcontrol-v2';
+const ASSETS = [
+  './',
+  './index.html',
+  './styles.css',
+  './app.js',
+  './js/api.js',
+  './js/session.js',
+  './manifest.webmanifest',
+  './pwa-icon.svg',
+];
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(ASSETS)));
 });

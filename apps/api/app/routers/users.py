@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from ..auth import get_current_user, require_role
 from ..database import get_db
+from ..guards import get_scoped_entity
 from ..models import Role, User
-from ..schemas import UserOut
+from ..schemas import PromoterAvailabilityIn, UserOut
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -19,11 +20,19 @@ def promoters(db: Session = Depends(get_db), user=Depends(require_role(Role.oper
     return db.query(User).filter(User.workspace_id == user.workspace_id, User.role == Role.promoter).all()
 
 
-@router.patch('/promoters/{user_id}/ready', response_model=UserOut)
-def set_ready(user_id: int, payload: dict, db: Session = Depends(get_db), _: User = Depends(require_role(Role.operator))):
-    promoter = db.get(User, user_id)
-    promoter.is_ready = bool(payload.get('is_ready', True))
-    promoter.suspicious_note = payload.get('suspicious_note')
+@router.patch('/promoters/{user_id}/availability', response_model=UserOut)
+def set_availability(
+    user_id: int,
+    payload: PromoterAvailabilityIn,
+    db: Session = Depends(get_db),
+    operator: User = Depends(require_role(Role.operator)),
+):
+    promoter = get_scoped_entity(db, User, user_id, operator.workspace_id, "Promoter not found")
+    if promoter.role != Role.promoter:
+        raise HTTPException(status_code=404, detail="Promoter not found")
+
+    promoter.is_ready = payload.is_ready
+    promoter.suspicious_note = payload.suspicious_note
     db.commit()
     db.refresh(promoter)
     return promoter

@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from ..auth import get_current_user, require_role
 from ..database import get_db
 from ..models import Role, WorkType
-from ..schemas import WorkTypeIn, WorkTypeOut
+from ..schemas import OkOut, WorkTypeIn, WorkTypeOut
 
 router = APIRouter(prefix="/work-types", tags=["work-types"])
 
@@ -37,7 +37,7 @@ def update_work_type(work_type_id: int, payload: WorkTypeIn, db: Session = Depen
     return work_type
 
 
-@router.delete('/{work_type_id}', response_model=dict)
+@router.delete('/{work_type_id}', response_model=OkOut)
 def delete_work_type(work_type_id: int, db: Session = Depends(get_db), user=Depends(require_role(Role.operator))):
     work_type = db.get(WorkType, work_type_id)
     if not work_type or work_type.workspace_id != user.workspace_id:
@@ -45,4 +45,4 @@ def delete_work_type(work_type_id: int, db: Session = Depends(get_db), user=Depe
 
     db.delete(work_type)
     db.commit()
-    return {'ok': True}
+    return OkOut(ok=True)

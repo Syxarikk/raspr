@@ -1,51 +1,77 @@
+# Default local setup. For explicit environments use:
+# - docker-compose.dev.yml
+# - docker-compose.prod.yml
 services:
   db:
-    image: postgres:16-alpine
+    image: postgres:16.8-alpine
     environment:
-      POSTGRES_DB: adcontrol
-      POSTGRES_USER: adcontrol
-      POSTGRES_PASSWORD: adcontrol
+      POSTGRES_DB: ${POSTGRES_DB:-adcontrol}
+      POSTGRES_USER: ${POSTGRES_USER:-adcontrol}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-adcontrol_local_dev_only}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U adcontrol"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
+      timeout: 5s
+      retries: 8
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    env_file:
+      - .env.dev
+    volumes:
+      - ./apps/api/uploads:/app/uploads
+    ports:
+      - "127.0.0.1:41111:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz')"]
+      interval: 10s
       timeout: 5s
       retries: 5
     restart: unless-stopped
 
-  api:
-    build: ./apps/api
+  admin:
+    build:
+      context: ./apps/admin
+      dockerfile: Dockerfile
     environment:
-      DATABASE_URL: postgresql+psycopg2://adcontrol:adcontrol@db:5432/adcontrol
-      SECRET_KEY: dev-secret
-    volumes:
-      - ./apps/api/uploads:/app/uploads
+      VITE_API_URL: ${DEV_ADMIN_API_URL:-http://localhost:41111/api/v1}
     ports:
-      - "0.0.0.0:41111:8000"
+      - "127.0.0.1:41112:5173"
     depends_on:
-      db:
+      api:
         condition: service_healthy
     restart: unless-stopped
 
-  admin:
-    build: ./apps/admin
+  miniapp:
+    build:
+      context: ./apps/miniapp
+      dockerfile: Dockerfile
     environment:
-      VITE_API_URL: http://176.106.144.117:41111
+      VITE_API_URL: ${DEV_MINIAPP_API_URL:-http://localhost:41111/api/v1}
     ports:
-      - "0.0.0.0:41112:5173"
+      - "127.0.0.1:41113:5174"
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     restart: unless-stopped
 
-  miniapp:
-    build: ./apps/miniapp
-    environment:
-      VITE_API_URL: http://176.106.144.117:41111
+  standalone:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     ports:
-      - "0.0.0.0:41113:5174"
+      - "127.0.0.1:41114:80"
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:

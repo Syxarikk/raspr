@@ -1,0 +1,19 @@
+{$API_HOST} {
+  encode gzip
+  reverse_proxy api:8000
+}
+
+{$ADMIN_HOST} {
+  encode gzip
+  reverse_proxy admin:80
+}
+
+{$MINIAPP_HOST} {
+  encode gzip
+  reverse_proxy miniapp:80
+}
+
+{$STANDALONE_HOST} {
+  encode gzip
+  reverse_proxy standalone:80
+}

@@ -1,45 +1,31 @@
-# AdControl Cross-Platform App
+# Standalone Client
 
-Адаптивное приложение по вашим макетам с поддержкой:
-- ✅ Browser/Web (готово сразу)
-- ✅ Android/iOS через Capacitor
-- ✅ macOS/Linux через Electron
+`frontend/` is the third standalone client in the AdControl stack.
 
-## Быстрый запуск (Web)
+## What it supports
+- Password auth (`POST /api/v1/auth/login`)
+- Telegram auth (`POST /api/v1/auth/telegram` with `init_data`)
+- Session restore with refresh flow (`POST /api/v1/auth/refresh`)
+- Role-aware UI for both `operator` and `promoter`
+- Operator actions:
+  - orders list + status transitions
+  - payouts view
+  - promoter availability updates
+  - photo review (`accepted` / `rejected`)
+- Promoter actions:
+  - own orders and payouts
+  - photo upload to order items
+
+## Local run
 ```bash
-python3 -m http.server 4173 --directory frontend
+docker compose -f docker-compose.dev.yml --env-file .env.dev up --build standalone
 ```
-Откройте: `http://localhost:4173`.
+Open `http://localhost:41114`.
 
-## Android/iOS
-1. Установить зависимости в среде с доступом к npm:
-   ```bash
-   npm i @capacitor/cli @capacitor/core
-   npx cap add android
-   npx cap add ios
-   ```
-2. Синхронизировать web-часть:
-   ```bash
-   npx cap sync
-   ```
-3. Открыть нативные IDE:
-   ```bash
-   npx cap open android
-   npx cap open ios
-   ```
-
-## macOS/Linux
-1. Установить Electron:
-   ```bash
-   npm i --save-dev electron
-   ```
-2. Запустить shell:
-   ```bash
-   npx electron frontend/electron.main.js
-   ```
-
-## Что реализовано
-- Десктопный layout с боковой навигацией и картой.
-- Мобильный layout с нижними вкладками и карточками задач.
-- Экраны: Аналитика, Адреса, Наряды, Исполнители, Гайды.
-- PWA manifest + service worker для offline-кеша.
+## Notes
+- API base defaults to `/api/v1`.
+- Refresh flow uses server cookies (`credentials: include`).
+- UI code is split into modules:
+  - `frontend/app.js`
+  - `frontend/js/api.js`
+  - `frontend/js/session.js`

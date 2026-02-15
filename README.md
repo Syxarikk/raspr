@@ -1,118 +1,108 @@
-# AdControl MVP
+# AdControl
 
-MVP-сервис учета расклейки наружной рекламы: backend + web admin + Telegram Mini App.
+AdControl is an MVP service for outdoor advertising operations:
+- `apps/api`: FastAPI + SQLAlchemy + Alembic
+- `apps/admin`: operator web UI (React + Vite)
+- `apps/miniapp`: promoter UI (React + Vite, Telegram WebApp flow)
+- `frontend`: standalone cross-platform web client shell
 
-## Почему FastAPI (5 строк)
-1. Быстрый старт для MVP: минимум boilerplate и высокая скорость разработки.
-2. Встроенный OpenAPI/Swagger без дополнительных плагинов.
-3. Удобная валидация через Pydantic DTO.
-4. Простая интеграция JWT/RBAC и загрузки файлов.
-5. Легко масштабировать на async, workers и S3-адаптер хранения.
+## Quick Start (Development)
 
-## Шаг A — Проектирование
-
-### 1) Архитектура (монорепо)
-- `apps/api` — FastAPI + SQLAlchemy + Alembic + seed.
-- `apps/admin` — React + Vite + TypeScript + MUI (operator UI).
-- `apps/miniapp` — React + Vite + TypeScript (Telegram WebApp flow for promoter).
-- `packages/shared` — зарезервировано под общие типы/SDK.
-- `docker-compose.yml` — единый запуск всей системы.
-
-### 2) ERD
-- `workspaces` 1—N `users`, `addresses`, `work_types`, `orders`, `photos`, `payouts`
-- `orders` N—1 `users` (promoter), N—1 `users` (created_by)
-- `orders` 1—N `order_items`
-- `order_items` N—M `work_types` через `order_item_work_types`
-- `photos` N—1 `order_items`, N—1 `work_types`, N—1 `users`(uploader)
-- `payouts` N—1 `orders`, N—1 `users`(promoter)
-
-### 3) Минимальный API
-- Auth: `POST /auth/login`, `POST /auth/telegram`
-- User: `GET /users/me`, `GET /users/promoters`, `PATCH /users/promoters/{id}/ready`
-- Types/Pricing: `GET/POST /work-types`
-- Addresses: `GET/POST /addresses`, `POST /addresses/import-csv`
-- Orders: `GET/POST /orders`, `GET /orders/{id}`, `PATCH /orders/{id}/status`
-- Photos: `POST /photos/upload`, `GET /photos/order/{id}`, `PATCH /photos/{id}/review`, `GET /photos/file/{id}`
-- Payouts: `GET /payouts`
-- Health: `GET /health`
-
-### 4) Навигация UI
-**Admin:** Login → Dashboard → Orders → Addresses (CSV) → Employees → Types & Pricing.
-
-**Mini App:** Tabs `Наряды / Оплата / Профиль` → Order list → Order detail/address flow → photo upload → review/payment status.
-
-### 5) Риски и упрощения MVP
-- В MVP Telegram `initData` упрощен до login по `telegram_id` (mock flow).
-- Карта в UI пока заглушка, но `lat/lng` и API-ready структура есть.
-- Переходы статусов не жестко ограничены state-machine (можно усилить).
-- Платежи без банковской интеграции (`on_review`/`to_pay`/`paid`).
-- Дедупликация фото реализована по SHA256 в рамках workspace.
-
-## Шаг B — Реализация
-
-### Запуск одной командой
+1. Copy env template if needed and adjust values:
 ```bash
-docker compose up --build
+cp .env.dev .env
 ```
 
- codex/create-mvp-for-adcontrol-web-service-zzf1po
-Сервисы:
-- API: http://176.106.144.117:51555 (Swagger: `/docs`)
-- Admin: http://176.106.144.117:5173
-- Mini App: http://176.106.144.117:5174
-=======
- main
+2. Start all services:
+```bash
+docker compose -f docker-compose.dev.yml --env-file .env.dev up --build
+```
 
-### Demo users
+3. Open services:
+- API: `http://localhost:41111/api/v1/health`
+- Admin: `http://localhost:41112`
+- Miniapp: `http://localhost:41113`
+- Standalone: `http://localhost:41114`
+
+## Production Compose
+
+Use the production stack with reverse proxy (Caddy) and TLS-ready host routing:
+```bash
+docker compose -f docker-compose.prod.yml --env-file .env.prod up --build -d
+```
+
+Configure these host variables in `.env.prod`:
+- `API_HOST`
+- `ADMIN_HOST`
+- `MINIAPP_HOST`
+- `STANDALONE_HOST`
+
+Daily PostgreSQL backups are enabled in production (`db-backup` service).
+Configure:
+- `BACKUP_INTERVAL_SECONDS` (default `86400`)
+- `BACKUP_RETENTION_DAYS` (default `7`)
+
+## API v1
+
+Base prefix: `/api/v1`
+
+Main endpoints:
+- Auth:
+  - `POST /auth/login`
+  - `POST /auth/telegram`
+  - `POST /auth/refresh`
+  - `POST /auth/logout`
+- Users:
+  - `GET /users/me`
+  - `GET /users/promoters`
+  - `PATCH /users/promoters/{id}/availability`
+- Orders:
+  - `GET /orders`
+  - `POST /orders`
+  - `GET /orders/{id}`
+  - `PATCH /orders/{id}/status`
+- Photos:
+  - `POST /photos`
+  - `GET /photos/order/{id}`
+  - `PATCH /photos/{id}/review`
+  - `GET /photos/file/{id}`
+- Payouts:
+  - `GET /payouts`
+- Health:
+  - `GET /health`
+  - `GET /metrics`
+
+## Demo Credentials
+
+Seed data (`RUN_SEED=true`) creates:
 - operator: `operator / operator123`
 - promoter: `promoter / promoter123`
-- telegram login mock: `telegram_id=123456789`
+- mock Telegram id for dev mode: `123456789`
 
-### Что есть в seed
-- 1 workspace
-- 1 operator
-- 1 promoter
-- 20 адресов
-- 5 типов работ
-- 2 наряда
+## Security Notes
 
-### Локальное хранение фото
-Файлы сохраняются в `apps/api/uploads` + метаданные в БД (`photos`).
-Под S3 расширяется через замену storage-адаптера (интерфейс уже выделяется логически в upload-сервисе).
+- Secrets must come from environment files (`.env.dev`, `.env.prod`) and are not hardcoded in compose.
+- CORS origins are configured via `CORS_ALLOW_ORIGINS`.
+- Refresh token is stored as HttpOnly cookie and tracked in DB (`refresh_sessions`).
+- Telegram login validates `init_data`; numeric mock input works only when `ALLOW_TELEGRAM_MOCK=true`.
+- CSV import is restricted by `MAX_CSV_UPLOAD_SIZE_MB` and `ALLOWED_CSV_UPLOAD_MIME_TYPES`.
 
-## Шаг C — Тесты и качество
-- Smoke test API: `apps/api/tests_smoke.py`
-- Линт/форматтер: базовый TypeScript strict; для production стоит добавить Ruff+ESLint ruleset.
+## Operations
 
-## ENV
-Основные переменные API:
-- `DATABASE_URL`
-- `SECRET_KEY`
-- `UPLOADS_DIR`
-
-## Telegram bot setup (MVP)
-1. Создать бота через BotFather.
-2. Включить WebApp URL на фронт miniapp.
-3. Передавать `initData` в miniapp (в MVP временно mock через telegram_id).
-4. В проде: добавить серверную валидацию `initData` по токену бота.
-codex/create-mvp-for-adcontrol-web-service-zzf1po
-
-
-## Troubleshooting docker compose
-Если видите ошибку вида `unable to prepare context: path "...apps/miniapp\n- "5174:5174"" not found`, значит локальный `docker-compose.yml` поврежден (обычно после merge-конфликта).
-
-Проверка:
+- Rollout/rollback/restore runbook: `docs/ops/rollout-runbook.md`
+- Ops scripts: `docker/ops/canary-rollout.sh`, `docker/ops/rollback-release.sh`, `docker/ops/restore-postgres.sh`
+- Regenerate shared OpenAPI types: `npm --prefix packages/api-client run generate`
+- Manual e2e hook: `pre-commit run --hook-stage manual standalone-e2e`
+- Backfill payouts after payout logic updates:
 ```bash
-rg -n "<<<<<<<|=======|>>>>>>>" docker-compose.yml
-docker compose config
+cd apps/api
+python -m app.scripts.backfill_payouts --dry-run
+python -m app.scripts.backfill_payouts --batch-size 200
 ```
 
-Быстрое исправление:
-```bash
-git checkout -- docker-compose.yml
-git pull
-docker compose up --build
-```
+## ADR
 
-=======
- main
+Architecture decisions are documented in `docs/adr/`:
+- `ADR-001-api-v1.md`
+- `ADR-002-auth-session.md`
+- `ADR-003-compose-dev-prod.md`

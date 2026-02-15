@@ -1,0 +1,75 @@
+services:
+  db:
+    image: postgres:16.8-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-adcontrol}
+      POSTGRES_USER: ${POSTGRES_USER:-adcontrol}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-adcontrol_local_dev_only}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 8
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    env_file:
+      - .env.dev
+    volumes:
+      - ./apps/api/uploads:/app/uploads
+    ports:
+      - "127.0.0.1:41111:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  admin:
+    build:
+      context: ./apps/admin
+      dockerfile: Dockerfile
+    environment:
+      VITE_API_URL: ${DEV_ADMIN_API_URL:-http://localhost:41111/api/v1}
+    ports:
+      - "127.0.0.1:41112:5173"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  miniapp:
+    build:
+      context: ./apps/miniapp
+      dockerfile: Dockerfile
+    environment:
+      VITE_API_URL: ${DEV_MINIAPP_API_URL:-http://localhost:41111/api/v1}
+    ports:
+      - "127.0.0.1:41113:5174"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  standalone:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "127.0.0.1:41114:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:

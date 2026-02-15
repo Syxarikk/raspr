@@ -1,0 +1,73 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.6
+    hooks:
+      - id: ruff
+      - id: ruff-format
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.13.0
+    hooks:
+      - id: mypy
+        additional_dependencies:
+          - sqlalchemy
+          - fastapi
+          - pydantic
+          - pydantic-settings
+          - python-jose
+          - passlib[bcrypt]
+  - repo: local
+    hooks:
+      - id: api-pytest
+        name: API pytest
+        entry: pytest apps/api/tests_smoke.py apps/api/tests_business.py apps/api/tests_integration.py
+        language: system
+        pass_filenames: false
+        files: ^apps/api/
+      - id: api-client-generated
+        name: API client generated types
+        entry: npm --prefix packages/api-client run check:generated
+        language: system
+        pass_filenames: false
+        files: ^(apps/api/|packages/api-client/)
+      - id: admin-lint
+        name: Admin lint
+        entry: npm --prefix apps/admin run lint
+        language: system
+        pass_filenames: false
+        files: ^apps/admin/
+      - id: admin-typecheck
+        name: Admin typecheck
+        entry: npm --prefix apps/admin run typecheck
+        language: system
+        pass_filenames: false
+        files: ^apps/admin/
+      - id: admin-test
+        name: Admin tests
+        entry: npm --prefix apps/admin run test
+        language: system
+        pass_filenames: false
+        files: ^apps/admin/
+      - id: miniapp-lint
+        name: Miniapp lint
+        entry: npm --prefix apps/miniapp run lint
+        language: system
+        pass_filenames: false
+        files: ^apps/miniapp/
+      - id: miniapp-typecheck
+        name: Miniapp typecheck
+        entry: npm --prefix apps/miniapp run typecheck
+        language: system
+        pass_filenames: false
+        files: ^apps/miniapp/
+      - id: miniapp-test
+        name: Miniapp tests
+        entry: npm --prefix apps/miniapp run test
+        language: system
+        pass_filenames: false
+        files: ^apps/miniapp/
+      - id: standalone-e2e
+        name: Standalone e2e (manual)
+        entry: npm --prefix tests/e2e test
+        language: system
+        pass_filenames: false
+        stages: [manual]

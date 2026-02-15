@@ -1,5 +1,6 @@
 node_modules
 .env
+.env.local
 __pycache__
 *.pyc
 uploads
@@ -7,6 +8,13 @@ apps/api/uploads
 apps/api/.venv
 apps/admin/dist
 apps/miniapp/dist
+apps/admin/tsconfig.tsbuildinfo
+apps/miniapp/tsconfig.tsbuildinfo
+frontend/linux/flutter/ephemeral/
+frontend/windows/flutter/ephemeral/
 .coverage
 .pytest_cache
 .claude/
+tests/e2e/node_modules
+tests/e2e/playwright-report
+tests/e2e/test-results

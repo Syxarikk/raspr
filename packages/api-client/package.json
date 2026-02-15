@@ -1,0 +1,17 @@
+{
+  "name": "@adcontrol/api-client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate:openapi": "python ../../apps/api/app/scripts/export_openapi.py ./openapi.json",
+    "generate:types": "openapi-typescript ./openapi.json -o ./src/generated.ts",
+    "generate": "npm run generate:openapi && npm run generate:types",
+    "check:generated": "npm run generate && git diff --exit-code -- src/generated.ts openapi.json",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.10.1",
+    "typescript": "~5.6.2"
+  }
+}
