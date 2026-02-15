@@ -64,7 +64,7 @@ services:
       context: ./apps/admin
       dockerfile: Dockerfile.prod
       args:
-        VITE_API_URL: ${PUBLIC_API_BASE_URL:-https://api.example.com/api/v1}
+        VITE_API_URL: ${PUBLIC_API_BASE_URL:-https://rasprostranitel.syxarik.ru/api/v1}
     depends_on:
       api:
         condition: service_healthy
@@ -77,7 +77,7 @@ services:
       context: ./apps/miniapp
       dockerfile: Dockerfile.prod
       args:
-        VITE_API_URL: ${PUBLIC_API_BASE_URL:-https://api.example.com/api/v1}
+        VITE_API_URL: ${PUBLIC_API_BASE_URL:-https://rasprostranitel.syxarik.ru/api/v1}
     depends_on:
       api:
         condition: service_healthy
@@ -99,9 +99,6 @@ services:
   caddy:
     image: caddy:2.8.4-alpine
     environment:
-      API_HOST: ${API_HOST}
-      ADMIN_HOST: ${ADMIN_HOST}
-      MINIAPP_HOST: ${MINIAPP_HOST}
       STANDALONE_HOST: ${STANDALONE_HOST}
     volumes:
       - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
@@ -109,8 +106,6 @@ services:
       - caddy_config:/config
     depends_on:
       - api
-      - admin
-      - miniapp
       - standalone
     ports:
       - "80:80"

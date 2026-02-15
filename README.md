@@ -31,11 +31,12 @@ Use the production stack with reverse proxy (Caddy) and TLS-ready host routing:
 docker compose -f docker-compose.prod.yml --env-file .env.prod up --build -d
 ```
 
-Configure these host variables in `.env.prod`:
-- `API_HOST`
-- `ADMIN_HOST`
-- `MINIAPP_HOST`
-- `STANDALONE_HOST`
+Production host in `.env.prod`:
+- `STANDALONE_HOST` (single public entrypoint, for example `rasprostranitel.syxarik.ru`)
+
+Routing model:
+- `https://$STANDALONE_HOST/` -> standalone client (role-based UI for operator/promoter)
+- `https://$STANDALONE_HOST/api/*` -> API (`/api/v1/...`)
 
 Daily PostgreSQL backups are enabled in production (`db-backup` service).
 Configure:

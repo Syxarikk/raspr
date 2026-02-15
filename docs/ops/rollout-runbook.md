@@ -15,7 +15,7 @@ Validate that `.env.prod` contains:
 - `POSTGRES_*`
 - `DATABASE_URL`
 - `SECRET_KEY`, `REFRESH_SECRET_KEY`
-- `API_HOST`, `ADMIN_HOST`, `MINIAPP_HOST`, `STANDALONE_HOST`
+- `STANDALONE_HOST`
 - `BACKUP_INTERVAL_SECONDS`, `BACKUP_RETENTION_DAYS`
 
 Replace example hostnames in commands with your actual domain values.
@@ -26,7 +26,7 @@ Use an isolated env file (`.env.staging`) with staging hosts and DB.
 
 ```bash
 docker compose -f docker-compose.prod.yml --env-file .env.staging up -d --build
-curl -fsS "https://staging-api.example.com/api/v1/health"
+curl -fsS "https://staging-rasprostranitel.example.com/api/v1/health"
 ```
 
 Recommended checks:
@@ -43,8 +43,8 @@ Deploy gradually on production host:
 docker compose -f docker-compose.prod.yml --env-file .env.prod up -d db db-backup api
 
 # 2) health gate
-curl -fsS "https://api.example.com/api/v1/health"
-curl -fsS "https://api.example.com/api/v1/metrics"
+curl -fsS "https://rasprostranitel.syxarik.ru/api/v1/health"
+curl -fsS "https://rasprostranitel.syxarik.ru/api/v1/metrics"
 
 # 3) UI services
 docker compose -f docker-compose.prod.yml --env-file .env.prod up -d admin miniapp standalone
@@ -108,7 +108,7 @@ Start API and verify health:
 
 ```bash
 docker compose -f docker-compose.prod.yml --env-file .env.prod up -d api
-curl -fsS "https://api.example.com/api/v1/health"
+curl -fsS "https://rasprostranitel.syxarik.ru/api/v1/health"
 ```
 
 ## 6. Application Rollback
