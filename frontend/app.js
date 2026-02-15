@@ -395,8 +395,8 @@ function renderAuth() {
   return `
     <section class="auth-shell">
       <div class="auth-card">
-        <div class="auth-brand">AdControl Standalone</div>
-        <h1>Вход в рабочее пространство</h1>
+        <div class="auth-brand">M</div>
+        <h1>AdControl Standalone</h1>
         <p>Клиент поддерживает роли <b>operator</b> и <b>promoter</b> через единый API <code>/api/v1</code>.</p>
 
         <div class="auth-modes">
@@ -440,7 +440,7 @@ function renderSidebar(tabs) {
   return `
     <aside class="sidebar">
       <div class="brand">
-        <div class="logo">A</div>
+        <div class="logo">M</div>
         <div>
           <div class="brand-title">AdControl</div>
           <div class="brand-subtitle">Standalone Client</div>
@@ -455,6 +455,7 @@ function renderSidebar(tabs) {
         </div>
       </div>
 
+      <div class="side-caption">MENU</div>
       <nav class="menu">
         ${tabs
           .map(
@@ -465,6 +466,7 @@ function renderSidebar(tabs) {
       </nav>
 
       <div class="sidebar-actions">
+        <div class="side-caption">ACCOUNT</div>
         <button type="button" class="secondary" data-action="reload-data">Обновить</button>
         <button type="button" class="danger" data-action="logout">Выйти</button>
       </div>
