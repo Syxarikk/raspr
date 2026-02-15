@@ -43,6 +43,7 @@ export function AdminApp(): React.JSX.Element {
   const [menu, setMenu] = useState<MenuKey>('analytics');
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const [me, setMe] = useState<ApiUser | null>(null);
   const [orders, setOrders] = useState<ApiOrder[]>([]);
@@ -411,8 +412,8 @@ export function AdminApp(): React.JSX.Element {
 
   return (
     <div className="admin-root">
-      <div className="app-shell">
-        <Sidebar active={menu} onMenu={setMenu} me={me} onLogout={logout} />
+      <div className={`app-shell ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+        <Sidebar active={menu} onMenu={setMenu} me={me} onLogout={logout} collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed((prev) => !prev)} />
 
         <main className="workspace">
           {loading ? <div className="loading-line" /> : null}

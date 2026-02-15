@@ -95,27 +95,31 @@ export function Sidebar({
   onMenu,
   me,
   onLogout,
+  collapsed,
+  onToggleCollapse,
 }: {
   active: MenuKey;
   onMenu: (key: MenuKey) => void;
   me: ApiUser | null;
   onLogout: () => void;
+  collapsed: boolean;
+  onToggleCollapse: () => void;
 }): React.JSX.Element {
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
       <div className="side-top">
-        <div className="brand-mini">AdControl</div>
-        <button className="circle-btn" type="button" aria-label="collapse menu">
-          <ChevronLeftRounded fontSize="small" />
+        {!collapsed ? <div className="brand-mini">AdControl</div> : null}
+        <button className="circle-btn" type="button" aria-label="collapse menu" onClick={onToggleCollapse}>
+          <ChevronLeftRounded fontSize="small" style={{ transform: collapsed ? 'rotate(180deg)' : undefined, transition: 'transform 200ms' }} />
         </button>
       </div>
 
       <div className="workspace-badge">
         <div className="workspace-logo">M</div>
-        <div className="workspace-name">Mknet Podolsk</div>
+        {!collapsed ? <div className="workspace-name">Mknet Podolsk</div> : null}
       </div>
 
-      <div className="side-caption">MENU</div>
+      {!collapsed ? <div className="side-caption">MENU</div> : null}
       <nav className="side-menu">
         {MENU_ITEMS.map((item) => {
           const Icon = item.icon;
@@ -125,33 +129,40 @@ export function Sidebar({
               className={`menu-item ${active === item.key ? 'active' : ''}`}
               type="button"
               onClick={() => onMenu(item.key)}
+              title={collapsed ? item.label : undefined}
             >
               <Icon fontSize="small" />
-              <span>{item.label}</span>
+              {!collapsed ? <span>{item.label}</span> : null}
             </button>
           );
         })}
       </nav>
 
       <div className="side-account">
-        <div className="user-chip">
-          <div className="avatar">{initials(me?.full_name || 'User')}</div>
-          <div>
-            <div className="user-name">{me?.full_name || 'Operator'}</div>
-            <div className="user-role">Marketing Manager</div>
+        {!collapsed ? (
+          <div className="user-chip">
+            <div className="avatar">{initials(me?.full_name || 'User')}</div>
+            <div>
+              <div className="user-name">{me?.full_name || 'Operator'}</div>
+              <div className="user-role">Marketing Manager</div>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="user-chip">
+            <div className="avatar">{initials(me?.full_name || 'User')}</div>
+          </div>
+        )}
 
-        <div className="side-caption">YOUR ACCOUNT</div>
+        {!collapsed ? <div className="side-caption">YOUR ACCOUNT</div> : null}
 
-        <button className="menu-item" type="button">
+        <button className="menu-item" type="button" title={collapsed ? 'Settings' : undefined}>
           <SettingsOutlined fontSize="small" />
-          <span>Settings</span>
+          {!collapsed ? <span>Settings</span> : null}
         </button>
 
-        <button className="menu-item" type="button" onClick={onLogout}>
+        <button className="menu-item" type="button" onClick={onLogout} title={collapsed ? 'Log Out' : undefined}>
           <LogoutRounded fontSize="small" />
-          <span>Log Out</span>
+          {!collapsed ? <span>Log Out</span> : null}
         </button>
       </div>
     </aside>

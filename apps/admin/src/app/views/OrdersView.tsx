@@ -1,8 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import AddRounded from '@mui/icons-material/AddRounded';
+import CameraAltOutlined from '@mui/icons-material/CameraAltOutlined';
+import ChatBubbleOutlineRounded from '@mui/icons-material/ChatBubbleOutlineRounded';
+import CheckRounded from '@mui/icons-material/CheckRounded';
+import ChevronLeftRounded from '@mui/icons-material/ChevronLeftRounded';
+import ChevronRightRounded from '@mui/icons-material/ChevronRightRounded';
 import CloseRounded from '@mui/icons-material/CloseRounded';
 import DeleteOutlineRounded from '@mui/icons-material/DeleteOutlineRounded';
+import EditOutlined from '@mui/icons-material/EditOutlined';
 import KeyboardArrowDownRounded from '@mui/icons-material/KeyboardArrowDownRounded';
+import LinkOutlined from '@mui/icons-material/LinkOutlined';
+import LocationOnOutlined from '@mui/icons-material/LocationOnOutlined';
 import SortRounded from '@mui/icons-material/SortRounded';
 import SwapVertRounded from '@mui/icons-material/SwapVertRounded';
 import TuneRounded from '@mui/icons-material/TuneRounded';
@@ -32,6 +40,8 @@ import type {
   PhotoPreview,
   PhotoReviewStatus,
 } from '../types';
+
+const PHOTO_TABS = ['Листовки', 'Хэнгеры', 'Этажи', 'Конкуренты'] as const;
 
 export function OrdersView({
   orders,
@@ -77,6 +87,16 @@ export function OrdersView({
   const [createStatus, setCreateStatus] = useState<OrderStatus>('Draft');
   const [selectedAddressIds, setSelectedAddressIds] = useState<number[]>([]);
   const [selectedWorkTypeIds, setSelectedWorkTypeIds] = useState<number[]>([]);
+
+  // Photo viewer state
+  const [viewingPhotoIndex, setViewingPhotoIndex] = useState<number | null>(null);
+  const [photoTab, setPhotoTab] = useState<string>('Листовки');
+
+  // Inline edit mode state
+  const [editMode, setEditMode] = useState(false);
+  const [editWorkTypeIds, setEditWorkTypeIds] = useState<number[]>([]);
+  const [editAddressQuery, setEditAddressQuery] = useState('');
+  const [editAddressIds, setEditAddressIds] = useState<number[]>([]);
 
   const promoterMap = useMemo(() => byId(promoters), [promoters]);
   const addressMap = useMemo(() => byId(addresses), [addresses]);
@@ -150,6 +170,61 @@ export function OrdersView({
     if (!normalized) return addresses;
     return addresses.filter((address) => buildAddressLabel(address).toLowerCase().includes(normalized));
   }, [addresses, createAddressQuery]);
+
+  const editSelectableAddresses = useMemo(() => {
+    const normalized = editAddressQuery.trim().toLowerCase();
+    if (!normalized) return addresses;
+    return addresses.filter((address) => buildAddressLabel(address).toLowerCase().includes(normalized));
+  }, [addresses, editAddressQuery]);
+
+  // Photo navigation
+  const photoList = selectedPhotos || [];
+  const currentPhoto = viewingPhotoIndex !== null ? photoList[viewingPhotoIndex] : null;
+  const hasPrevPhoto = viewingPhotoIndex !== null && viewingPhotoIndex > 0;
+  const hasNextPhoto = viewingPhotoIndex !== null && viewingPhotoIndex < photoList.length - 1;
+
+  const openPhotoViewer = useCallback((index: number) => {
+    setViewingPhotoIndex(index);
+  }, []);
+
+  const closePhotoViewer = useCallback(() => {
+    setViewingPhotoIndex(null);
+  }, []);
+
+  const prevPhoto = useCallback(() => {
+    setViewingPhotoIndex((prev) => (prev !== null && prev > 0 ? prev - 1 : prev));
+  }, []);
+
+  const nextPhoto = useCallback(() => {
+    setViewingPhotoIndex((prev) => (prev !== null && prev < photoList.length - 1 ? prev + 1 : prev));
+  }, [photoList.length]);
+
+  // Enter edit mode
+  const enterEditMode = useCallback(() => {
+    if (!selectedDetail) return;
+    const typeIds = new Set<number>();
+    selectedDetail.items?.forEach((item) => item.work_type_ids.forEach((id) => typeIds.add(id)));
+    setEditWorkTypeIds(Array.from(typeIds));
+    setEditAddressIds(detailAddresses.map((a) => a.id));
+    setEditAddressQuery('');
+    setEditMode(true);
+  }, [detailAddresses, selectedDetail]);
+
+  const finishEditMode = useCallback(() => {
+    setEditMode(false);
+  }, []);
+
+  const toggleEditWorkType = useCallback((workTypeId: number) => {
+    setEditWorkTypeIds((prev) => (prev.includes(workTypeId) ? prev.filter((id) => id !== workTypeId) : [...prev, workTypeId]));
+  }, []);
+
+  const removeEditAddress = useCallback((addressId: number) => {
+    setEditAddressIds((prev) => prev.filter((id) => id !== addressId));
+  }, []);
+
+  const addEditAddress = useCallback((addressId: number) => {
+    setEditAddressIds((prev) => (prev.includes(addressId) ? prev : [...prev, addressId]));
+  }, []);
 
   const openCreateModal = useCallback(() => {
     setCreateTitle(`Наряд #${Date.now().toString().slice(-4)}`);
@@ -286,108 +361,316 @@ export function OrdersView({
         </div>
       </section>
 
-      <section className="panel detail-panel hide-on-mobile">
-        <div className="section-header">
-          <h2>{selectedOrder ? `#${selectedOrder.id}` : 'Наряд'}</h2>
-          <div className="header-actions">
-            <span className={`status-pill ${statusClass(selectedOrder?.status || 'Draft')}`}>{statusLabel(selectedOrder?.status || 'Draft')}</span>
-            {selectedOrder && (
+      {/* Photo Viewer Mode */}
+      {viewingPhotoIndex !== null && selectedOrder ? (
+        <>
+          <section className="panel photo-viewer-panel hide-on-mobile">
+            <div className="photo-viewer-main">
+              {currentPhoto?.previewUrl ? (
+                <img className="photo-viewer-image" src={currentPhoto.previewUrl} alt={`Фото ${currentPhoto.id}`} />
+              ) : (
+                <div className="photo-viewer-placeholder">Нет превью</div>
+              )}
+
               <button
-                className="icon-btn"
+                className="photo-nav-btn photo-nav-prev"
                 type="button"
-                onClick={() => void onDeleteOrder(selectedOrder.id)}
-                title="Удалить наряд"
+                onClick={prevPhoto}
+                disabled={!hasPrevPhoto}
               >
-                <DeleteOutlineRounded fontSize="small" />
+                <ChevronLeftRounded />
               </button>
-            )}
-            <button className="icon-btn" type="button"><CloseRounded fontSize="small" /></button>
-          </div>
-        </div>
+              <button
+                className="photo-nav-btn photo-nav-next"
+                type="button"
+                onClick={nextPhoto}
+                disabled={!hasNextPhoto}
+              >
+                <ChevronRightRounded />
+              </button>
+            </div>
 
-        {selectedOrder ? (
-          <>
-            <div className="person-header">
-              <div className="avatar small">{initials(selectedPromoter?.full_name || selectedOrder.title)}</div>
-              <div>
-                <strong>{selectedPromoter?.full_name || 'Исполнитель не назначен'}</strong>
-                <p>@{selectedPromoter?.username || 'no-username'}</p>
+            <div className="photo-toolbar">
+              <button className="photo-toolbar-btn" type="button"><LocationOnOutlined fontSize="small" /></button>
+              <button className="photo-toolbar-btn active" type="button"><ChatBubbleOutlineRounded fontSize="small" /></button>
+              <button className="photo-toolbar-btn" type="button"><CameraAltOutlined fontSize="small" /></button>
+              <button className="photo-toolbar-btn" type="button"><LinkOutlined fontSize="small" /></button>
+              <span className="photo-count-badge">{photoList.length}</span>
+            </div>
+
+            {currentPhoto ? (
+              <div className="photo-viewer-comment">
+                <span className="small-text">Исполнитель увидит этот комментарий:</span>
+                <div className="photo-comment-text">
+                  {currentPhoto.reject_reason || 'Листовки нужно класть по одной штуке в каждую дверь.'}
+                </div>
               </div>
-              <span className={`status-pill ${statusClass(selectedOrder.status)}`}>{statusLabel(selectedOrder.status)}</span>
+            ) : null}
+          </section>
+
+          <section className="panel photo-grid-panel hide-on-mobile">
+            <div className="photo-grid-header">
+              <h3>{detailAddresses[0] ? `${detailAddresses[0].street}, ${detailAddresses[0].building}` : `Наряд #${selectedOrder.id}`}</h3>
+              <button className="icon-btn" type="button" onClick={closePhotoViewer}>
+                <CloseRounded fontSize="small" />
+              </button>
             </div>
 
-            <div className="subsection-title">Что нужно сделать</div>
-            <div className="chip-row">
-              {detailTypes.map((workType) => (
-                <span key={workType.id} className="mini-chip active">
-                  {workType.name}
-                </span>
+            <div className="photo-grid-worker-comment">
+              <ChatBubbleOutlineRounded fontSize="small" />
+              <span>Комментарий работника</span>
+              <KeyboardArrowDownRounded fontSize="small" style={{ marginLeft: 'auto' }} />
+            </div>
+
+            <div className="photo-grid-tabs">
+              {PHOTO_TABS.map((tab) => (
+                <button
+                  key={tab}
+                  className={`photo-grid-tab ${photoTab === tab ? 'active' : ''}`}
+                  type="button"
+                  onClick={() => setPhotoTab(tab)}
+                >
+                  {tab}
+                </button>
               ))}
-              {!detailTypes.length ? <span className="mini-chip">Нет типов работ</span> : null}
             </div>
 
-            <div className="subsection-title">Какие адреса надо посетить</div>
-            {detailsLoading ? <div className="small-text">Загрузка деталей...</div> : null}
-            <div className="address-edit-list">
-              {detailAddresses.map((address) => (
-                <div key={address.id} className="address-edit-row">
-                  <strong>ул. {address.street}, {address.building}</strong>
-                  <span className="small-text">id {address.id}</span>
+            <div className="photo-grid-section-title">
+              {photoTab} <span className="photo-grid-count">{photoList.length}</span>
+            </div>
+
+            <div className="photo-thumb-grid">
+              {photoList.map((photo, index) => (
+                <div
+                  key={photo.id}
+                  className={`photo-thumb ${viewingPhotoIndex === index ? 'selected' : ''}`}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => openPhotoViewer(index)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      openPhotoViewer(index);
+                    }
+                  }}
+                >
+                  {photo.previewUrl ? (
+                    <img src={photo.previewUrl} alt={`Фото ${photo.id}`} />
+                  ) : (
+                    <div className="photo-thumb-placeholder" />
+                  )}
+                  <i className={`photo-dot ${photo.status === 'accepted' ? 'green' : photo.status === 'rejected' ? 'red' : 'orange'}`} />
+                  {photo.status === 'accepted' ? <span className="photo-thumb-badge">{photo.id}</span> : null}
                 </div>
               ))}
-              {!detailAddresses.length && !detailsLoading ? <div className="empty-text">У наряда нет адресов</div> : null}
+              {!photoList.length ? <div className="empty-text">Нет фото</div> : null}
             </div>
 
-            <div className="subsection-title">Фото по наряду</div>
-            {photosLoading ? <div className="small-text">Загрузка фото...</div> : null}
-            <div className="photo-grid">
-              {selectedPhotos?.map((photo) => (
-                <article key={photo.id} className="photo-card">
-                  {photo.previewUrl ? (
-                    <img className="photo-image" src={photo.previewUrl} alt={`Фото ${photo.id}`} />
-                  ) : (
-                    <div className="placeholder-image">Нет превью</div>
-                  )}
-
-                  <div className="photo-meta">
-                    <strong>#{photo.id}</strong>
-                    <span className={`status-pill ${photo.status === 'accepted' ? 'is-completed' : photo.status === 'rejected' ? 'is-assigned' : 'is-review'}`}>
-                      {photo.status === 'accepted' ? 'Принято' : photo.status === 'rejected' ? 'Отклонено' : 'На проверке'}
-                    </span>
-                  </div>
-
-                  {photo.reject_reason ? <div className="small-text">Причина: {photo.reject_reason}</div> : null}
-
-                  <div className="photo-actions">
-                    <button className="success-btn" type="button" onClick={() => void onReviewPhoto(photo.id, 'accepted')}>
-                      Принять
+            {currentPhoto ? (
+              <div className="photo-review-actions">
+                <button className="success-btn" type="button" onClick={() => void onReviewPhoto(currentPhoto.id, 'accepted')}>
+                  Принять
+                </button>
+                <button
+                  className="danger-btn"
+                  type="button"
+                  onClick={() => {
+                    const reason = window.prompt('Причина отклонения (необязательно):', currentPhoto.reject_reason || '');
+                    if (reason === null) return;
+                    void onReviewPhoto(currentPhoto.id, 'rejected', reason || undefined);
+                  }}
+                >
+                  Отклонить
+                </button>
+              </div>
+            ) : null}
+          </section>
+        </>
+      ) : (
+        <>
+          {/* Detail Panel (normal or edit mode) */}
+          <section className="panel detail-panel hide-on-mobile">
+            <div className="section-header">
+              <h2>{selectedOrder ? `#${selectedOrder.id}` : 'Наряд'}</h2>
+              <div className="header-actions">
+                {editMode && selectedOrder ? (
+                  <button className="ghost-link success" type="button" onClick={finishEditMode}>
+                    <CheckRounded fontSize="small" />
+                    Закончить изменения
+                  </button>
+                ) : null}
+                {!editMode ? (
+                  <span className={`status-pill ${statusClass(selectedOrder?.status || 'Draft')}`}>{statusLabel(selectedOrder?.status || 'Draft')}</span>
+                ) : null}
+                {selectedOrder && !editMode ? (
+                  <>
+                    <button
+                      className="icon-btn"
+                      type="button"
+                      onClick={enterEditMode}
+                      title="Редактировать наряд"
+                    >
+                      <EditOutlined fontSize="small" />
                     </button>
                     <button
-                      className="danger-btn"
+                      className="icon-btn"
                       type="button"
-                      onClick={() => {
-                        const reason = window.prompt('Причина отклонения (необязательно):', photo.reject_reason || '');
-                        if (reason === null) return;
-                        void onReviewPhoto(photo.id, 'rejected', reason || undefined);
-                      }}
+                      onClick={() => void onDeleteOrder(selectedOrder.id)}
+                      title="Удалить наряд"
                     >
-                      Отклонить
+                      <DeleteOutlineRounded fontSize="small" />
                     </button>
-                  </div>
-                </article>
-              ))}
-
-              {!selectedPhotos?.length && !photosLoading ? <div className="empty-text">Фото не загружены</div> : null}
+                  </>
+                ) : null}
+                <button className="icon-btn" type="button" onClick={() => { setEditMode(false); }}>
+                  <CloseRounded fontSize="small" />
+                </button>
+              </div>
             </div>
-          </>
-        ) : (
-          <div className="empty-text">Выберите наряд из списка</div>
-        )}
-      </section>
 
-      <section className="panel map-panel hide-on-mobile">
-        <MapSurface markers={mapMarkers} activeDock="orders" />
-      </section>
+            {selectedOrder ? (
+              <>
+                <div className="person-header">
+                  <div className="avatar small">{initials(selectedPromoter?.full_name || selectedOrder.title)}</div>
+                  <div>
+                    {editMode ? (
+                      <span className="ghost-link">
+                        <EditOutlined style={{ fontSize: 14 }} />
+                        {selectedPromoter?.full_name || 'Исполнитель не назначен'}
+                      </span>
+                    ) : (
+                      <strong>{selectedPromoter?.full_name || 'Исполнитель не назначен'}</strong>
+                    )}
+                    {!editMode ? <p>@{selectedPromoter?.username || 'no-username'}</p> : null}
+                  </div>
+                  <span className={`status-pill ${statusClass(selectedOrder.status)}`}>{statusLabel(selectedOrder.status)}</span>
+                </div>
+
+                <div className="subsection-title">Что нужно сделать</div>
+                <div className="chip-row">
+                  {editMode ? (
+                    workTypes.map((workType) => (
+                      <button
+                        key={workType.id}
+                        className={`mini-chip ${editWorkTypeIds.includes(workType.id) ? 'active' : ''}`}
+                        type="button"
+                        onClick={() => toggleEditWorkType(workType.id)}
+                      >
+                        {workType.name}
+                      </button>
+                    ))
+                  ) : (
+                    <>
+                      {detailTypes.map((workType) => (
+                        <span key={workType.id} className="mini-chip active">
+                          {workType.name}
+                        </span>
+                      ))}
+                      {!detailTypes.length ? <span className="mini-chip">Нет типов работ</span> : null}
+                    </>
+                  )}
+                </div>
+
+                <div className="subsection-title">Какие адреса надо посетить</div>
+                {detailsLoading ? <div className="small-text">Загрузка деталей...</div> : null}
+
+                {editMode ? (
+                  <>
+                    <SearchInput value={editAddressQuery} onChange={setEditAddressQuery} placeholder="Введите адрес чтобы добавить" />
+                    {editAddressQuery.trim() ? (
+                      <div className="address-edit-list">
+                        {editSelectableAddresses
+                          .filter((a) => !editAddressIds.includes(a.id))
+                          .slice(0, 5)
+                          .map((address) => (
+                            <div key={address.id} className="address-edit-row" role="button" tabIndex={0} onClick={() => addEditAddress(address.id)} onKeyDown={(e) => { if (e.key === 'Enter') addEditAddress(address.id); }}>
+                              <strong>ул. {address.street}, {address.building}</strong>
+                              <button className="ghost-link" type="button" onClick={() => addEditAddress(address.id)}>+ Добавить</button>
+                            </div>
+                          ))}
+                      </div>
+                    ) : null}
+                    <div className="address-edit-list">
+                      {editAddressIds.map((addressId) => {
+                        const address = addressMap.get(addressId);
+                        if (!address) return null;
+                        return (
+                          <div key={address.id} className="address-edit-row">
+                            <strong>ул. {address.street}, {address.building}</strong>
+                            <button className="ghost-link danger" type="button" onClick={() => removeEditAddress(address.id)}>— Удалить</button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                ) : (
+                  <div className="address-edit-list">
+                    {detailAddresses.map((address) => (
+                      <div key={address.id} className="address-edit-row">
+                        <strong>ул. {address.street}, {address.building}</strong>
+                        <span className="small-text">id {address.id}</span>
+                      </div>
+                    ))}
+                    {!detailAddresses.length && !detailsLoading ? <div className="empty-text">У наряда нет адресов</div> : null}
+                  </div>
+                )}
+
+                {!editMode ? (
+                  <>
+                    <div className="subsection-title">Фото по наряду</div>
+                    {photosLoading ? <div className="small-text">Загрузка фото...</div> : null}
+                    <div className="photo-grid">
+                      {selectedPhotos?.map((photo, index) => (
+                        <article key={photo.id} className="photo-card" role="button" tabIndex={0} onClick={() => openPhotoViewer(index)} onKeyDown={(e) => { if (e.key === 'Enter') openPhotoViewer(index); }}>
+                          {photo.previewUrl ? (
+                            <img className="photo-image" src={photo.previewUrl} alt={`Фото ${photo.id}`} />
+                          ) : (
+                            <div className="placeholder-image">Нет превью</div>
+                          )}
+
+                          <div className="photo-meta">
+                            <strong>#{photo.id}</strong>
+                            <span className={`status-pill ${photo.status === 'accepted' ? 'is-completed' : photo.status === 'rejected' ? 'is-assigned' : 'is-review'}`}>
+                              {photo.status === 'accepted' ? 'Принято' : photo.status === 'rejected' ? 'Отклонено' : 'На проверке'}
+                            </span>
+                          </div>
+
+                          {photo.reject_reason ? <div className="small-text">Причина: {photo.reject_reason}</div> : null}
+
+                          <div className="photo-actions" onClick={(e) => e.stopPropagation()} role="presentation">
+                            <button className="success-btn" type="button" onClick={() => void onReviewPhoto(photo.id, 'accepted')}>
+                              Принять
+                            </button>
+                            <button
+                              className="danger-btn"
+                              type="button"
+                              onClick={() => {
+                                const reason = window.prompt('Причина отклонения (необязательно):', photo.reject_reason || '');
+                                if (reason === null) return;
+                                void onReviewPhoto(photo.id, 'rejected', reason || undefined);
+                              }}
+                            >
+                              Отклонить
+                            </button>
+                          </div>
+                        </article>
+                      ))}
+
+                      {!selectedPhotos?.length && !photosLoading ? <div className="empty-text">Фото не загружены</div> : null}
+                    </div>
+                  </>
+                ) : null}
+              </>
+            ) : (
+              <div className="empty-text">Выберите наряд из списка</div>
+            )}
+          </section>
+
+          <section className="panel map-panel hide-on-mobile">
+            <MapSurface markers={mapMarkers} activeDock="orders" />
+          </section>
+        </>
+      )}
 
       <ModalShell open={createOpen} title="Создать наряд" onClose={() => setCreateOpen(false)} wide>
         <form className="stack" onSubmit={submitCreateOrder}>
