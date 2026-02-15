@@ -61,8 +61,8 @@ services:
 
   admin:
     build:
-      context: ./apps/admin
-      dockerfile: Dockerfile.prod
+      context: .
+      dockerfile: apps/admin/Dockerfile.prod
       args:
         VITE_API_URL: ${PUBLIC_API_BASE_URL:-https://rasprostranitel.syxarik.ru/api/v1}
     depends_on:
@@ -74,8 +74,8 @@ services:
 
   miniapp:
     build:
-      context: ./apps/miniapp
-      dockerfile: Dockerfile.prod
+      context: .
+      dockerfile: apps/miniapp/Dockerfile.prod
       args:
         VITE_API_URL: ${PUBLIC_API_BASE_URL:-https://rasprostranitel.syxarik.ru/api/v1}
     depends_on:
